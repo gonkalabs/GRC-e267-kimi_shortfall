@@ -68,6 +68,13 @@
   "epoch": 267,
   "epoch_reward_gonka": 284661.946392228,
   "epoch_reward_ngonka": 284661946392228,
+  "full_case_conclusion": {
+    "confirmed_victim_rule": "cPoC #1 Kimi failed by weight and guardian shortfall, two guardian no-votes, zero reward, later three cPoCs passed",
+    "confirmed_victims": 1,
+    "related_non_victim_signals": "guardian no-votes without failed cPoC, and Kimi non-submit/non-voting source candidates"
+  },
+  "full_case_matrix_rows": 11,
+  "guardian_skip_rows": 2,
   "kimi_cpoc1_non_submit_or_non_voting_candidates": 8,
   "kimi_cpoc1_non_submit_or_non_voting_candidates_top": [
     {

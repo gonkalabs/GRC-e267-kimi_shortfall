@@ -23,7 +23,7 @@ node1, node2, node3, and node4.
 | --- | --- |
 | What happened? | During one cPoC in epoch 267, two large Kimi nodes were reportedly preserved. At the same time, two guardian nodes failed to validate the proposer address. Direct chain data shows Kimi failed by validation-weight plus guardian shortfall; Qwen had a weight shortfall but passed by guardian protection. |
 | Why might restitution be needed? | The proposer reports that the node behaved the same as in previous epochs and passed the next three cPoC events in the same epoch, but failed this specific cPoC and received zero rewards. If the failure was caused by preserved high-voting-power nodes plus guardian validation skips, the participant may have lost rewards due to a network/software issue. |
-| Who may be affected? | The narrow direct-failure check currently identifies `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6`. Additional Kimi cPoC #1 non-submit / non-voting candidates are listed in `output/case3_kimi_cpoc1_non_submit_candidates.csv`; the full affected cohort still needs preserved-node counterfactual confirmation. |
+| Who may be affected? | The full-case direct-chain audit confirms one restitution victim: `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6`. Related guardian-skip and Kimi non-voting source candidates are listed in `output/case3_full_case_matrix.csv`, but they do not match the described victim pattern. |
 | What is already confirmed? | Direct chain data shows the participant submitted cPoC #1, had Qwen `pass_guardian`, had Kimi `weight_and_guardian_shortfall`, received zero epoch reward, and passed the next three cPoCs. Core-team note: `poc/proofs` was not exempted from API rate limiting, so proof artifact requests could be blocked. |
 | What is still uncertain? | The direct chain endpoints used in the audit do not expose an explicit historical "preserved" label at height `4122271`. Exact fix commit and release/deployment timestamp still need final validator confirmation. |
 
@@ -58,8 +58,8 @@ Use UTC times. Add block heights when available.
 | Affected model / subgroup, if relevant | Kimi is central to the report; Qwen was reportedly also skipped for the proposer |
 | Affected rounds, CPoCs, or epochs | Epoch 267 cPoC #1 at trigger height `4122271` |
 | Baseline state to compare against | Previous successful epochs for the same node and the next three successful cPoCs in epoch 267 |
-| Estimated affected count | 1 direct-failure participant plus additional Kimi cPoC #1 non-submit / non-voting candidates pending preserved-node confirmation |
-| Estimated restitution exposure | 10,262.057515 GONKA under the narrow direct-failure rule; candidate preserved-node exposure still under investigation |
+| Estimated affected count | 1 confirmed restitution victim; 0 additional confirmed victims from the described cPoC #1 Kimi/guardian failure |
+| Estimated restitution exposure | 10,262.057515 GONKA under the full described failure rule |
 
 ## 6. Eligibility Draft
 

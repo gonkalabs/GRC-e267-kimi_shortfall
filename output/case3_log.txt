@@ -1,15 +1,16 @@
-[20:24:29] chain-only audit epoch=267
-[20:24:29] epoch_reward=284661.946392 GONKA
-[20:24:29] cpoc trigger heights=[4122271, 4130085, 4133665, 4134529]
-[20:24:29] aggregate participants=51 root_total_weight=541415
-[20:24:29] qwen members=34 kimi members=27
-[20:24:29] stage=4122271 commits=42 validation_rows=831
-[20:24:29] stage=4130085 commits=44 validation_rows=961
-[20:24:29] stage=4133665 commits=40 validation_rows=784
-[20:24:29] stage=4134529 commits=39 validation_rows=783
-[20:24:29] fetched reward summaries=51
-[20:24:29] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_per_participant.csv
-[20:24:29] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_affected_no_vote_validators.csv
-[20:24:29] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_kimi_cpoc1_non_submit_candidates.csv
-[20:24:29] affected=1 total=10262.057515 GONKA
-[20:24:29]   gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6 weight=19518 loss=10262.057515 cpoc1=Qwen:pass_guardian;Kimi:weight_and_guardian_shortfall
+[20:43:20] chain-only audit epoch=267
+[20:43:20] epoch_reward=284661.946392 GONKA
+[20:43:20] cpoc trigger heights=[4122271, 4130085, 4133665, 4134529]
+[20:43:20] aggregate participants=51 root_total_weight=541415
+[20:43:20] qwen members=34 kimi members=27
+[20:43:20] stage=4122271 commits=42 validation_rows=831
+[20:43:20] stage=4130085 commits=44 validation_rows=961
+[20:43:20] stage=4133665 commits=40 validation_rows=784
+[20:43:20] stage=4134529 commits=39 validation_rows=783
+[20:43:20] fetched reward summaries=51
+[20:43:20] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_per_participant.csv
+[20:43:20] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_affected_no_vote_validators.csv
+[20:43:20] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_kimi_cpoc1_non_submit_candidates.csv
+[20:43:20] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_full_case_matrix.csv
+[20:43:20] affected=1 total=10262.057515 GONKA
+[20:43:20]   gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6 weight=19518 loss=10262.057515 cpoc1=Qwen:pass_guardian;Kimi:weight_and_guardian_shortfall

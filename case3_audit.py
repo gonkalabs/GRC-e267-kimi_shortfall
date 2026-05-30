@@ -583,6 +583,97 @@ def audit(args: argparse.Namespace) -> None:
         writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(kimi_candidates)
+    full_case_rows: list[dict[str, Any]] = []
+    if stage_heights:
+        for r in rows:
+            event = (json.loads(r["event_details_json"]) or [{}])[0]
+            for model, detail in sorted((event.get("models") or {}).items()):
+                guardian_no_vote = int_of(detail.get("guardian_no_vote"))
+                failed = not bool(detail.get("passed"))
+                if not failed and guardian_no_vote == 0:
+                    continue
+                confirmed_victim = bool(
+                    model == "Kimi"
+                    and failed
+                    and guardian_no_vote >= 2
+                    and r["zero_reward"]
+                    and r["later_three_pass"]
+                )
+                full_expected = (
+                    int((Decimal(weights.get(r["participant_address"], 0)) / Decimal(root_total_weight) * Decimal(epoch_reward)).to_integral_value())
+                    if root_total_weight
+                    else 0
+                )
+                full_gap = max(0, full_expected - int_of(r.get("actual_reward_ngonka")))
+                full_case_rows.append(
+                    {
+                        "row_type": "confirmed_victim" if confirmed_victim else "guardian_skip_no_confirmed_loss",
+                        "participant_address": r["participant_address"],
+                        "model": model,
+                        "cpoc1_status": r["cpoc1"],
+                        "submitted_count": detail.get("count", 0),
+                        "passed": detail.get("passed"),
+                        "reason": detail.get("reason"),
+                        "valid_weight": detail.get("valid_weight", 0),
+                        "total_weight": detail.get("total_weight", root_total_weight),
+                        "guardian_valid": detail.get("guardian_valid", 0),
+                        "guardian_invalid": detail.get("guardian_invalid", 0),
+                        "guardian_no_vote": guardian_no_vote,
+                        "actual_reward_gonka": r["actual_reward_gonka"],
+                        "full_weight_gap_gonka": ngonka_to_gonka(full_gap),
+                        "restitution_gonka": r["restitution_gonka"],
+                        "conclusion": "eligible under full described Votkon failure"
+                        if confirmed_victim
+                        else "related guardian-skip signal, but the cPoC passed and no direct case #3 loss is confirmed",
+                    }
+                )
+    for candidate in kimi_candidates:
+        full_case_rows.append(
+            {
+                "row_type": "kimi_non_submit_or_non_voting_source_candidate",
+                "participant_address": candidate["participant_address"],
+                "model": "Kimi",
+                "cpoc1_status": "no Kimi commit"
+                if not candidate["submitted_kimi_cpoc1"]
+                else "Kimi commit, no Kimi validation rows",
+                "submitted_count": "",
+                "passed": "",
+                "reason": "",
+                "valid_weight": "",
+                "total_weight": root_total_weight,
+                "guardian_valid": "",
+                "guardian_invalid": "",
+                "guardian_no_vote": "",
+                "actual_reward_gonka": candidate["actual_reward_gonka"],
+                "full_weight_gap_gonka": candidate["full_weight_gap_gonka"],
+                "restitution_gonka": "0.000000",
+                "conclusion": "possible causal non-voting/preserved Kimi source; not a restitution victim from the described failure unless GRC broadens policy",
+            }
+        )
+    full_case_rows.sort(key=lambda r: (r["row_type"], r["participant_address"], r["model"]))
+    full_case_path = os.path.join(OUT_DIR, "case3_full_case_matrix.csv")
+    with open(full_case_path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = [
+            "row_type",
+            "participant_address",
+            "model",
+            "cpoc1_status",
+            "submitted_count",
+            "passed",
+            "reason",
+            "valid_weight",
+            "total_weight",
+            "guardian_valid",
+            "guardian_invalid",
+            "guardian_no_vote",
+            "actual_reward_gonka",
+            "full_weight_gap_gonka",
+            "restitution_gonka",
+            "conclusion",
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(full_case_rows)
     zero_reward_rows = [r for r in rows if r["zero_reward"]]
     summary = {
         "epoch": epoch,
@@ -595,6 +686,8 @@ def audit(args: argparse.Namespace) -> None:
         "participants": len(rows),
         "zero_reward_participants": len(zero_reward_rows),
         "affected_participants": len(affected_rows),
+        "full_case_matrix_rows": len(full_case_rows),
+        "guardian_skip_rows": sum(1 for r in full_case_rows if r["row_type"] == "guardian_skip_no_confirmed_loss"),
         "kimi_cpoc1_non_submit_or_non_voting_candidates": len(kimi_candidates),
         "total_restitution_ngonka": sum(int(r["restitution_ngonka"]) for r in affected_rows),
         "total_restitution_gonka": float(sum(Decimal(r["restitution_ngonka"]) for r in affected_rows) / Decimal(1_000_000_000)),
@@ -659,6 +752,11 @@ def audit(args: argparse.Namespace) -> None:
             for r in zero_reward_rows
             if not r["affected"]
         ],
+        "full_case_conclusion": {
+            "confirmed_victims": len(affected_rows),
+            "confirmed_victim_rule": "cPoC #1 Kimi failed by weight and guardian shortfall, two guardian no-votes, zero reward, later three cPoCs passed",
+            "related_non_victim_signals": "guardian no-votes without failed cPoC, and Kimi non-submit/non-voting source candidates",
+        },
     }
     with open(os.path.join(OUT_DIR, "case3_summary.json"), "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, sort_keys=True)
@@ -666,6 +764,7 @@ def audit(args: argparse.Namespace) -> None:
     log(f"wrote {csv_path}")
     log(f"wrote {no_vote_detail_path}")
     log(f"wrote {kimi_candidates_path}")
+    log(f"wrote {full_case_path}")
     log(f"affected={len(affected_rows)} total={summary['total_restitution_gonka']:.6f} GONKA")
     for r in affected_rows:
         log(f"  {r['participant_address']} weight={r['weight']} loss={r['restitution_gonka']} cpoc1={r['cpoc1']}")

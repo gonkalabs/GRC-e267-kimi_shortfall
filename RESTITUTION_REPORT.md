@@ -5,10 +5,10 @@ node1-node4 only.
 
 ## Summary
 
-The current audit has a narrow direct-failure result, not the final full
-affected cohort. It found **1 participant** with zero reward where cPoC #1
-Kimi failed by validation-weight plus guardian shortfall, Qwen passed only by
-guardian protection, and the next three cPoCs passed.
+The full-case audit found **1 confirmed restitution victim**. This participant
+had zero reward where cPoC #1 Kimi failed by validation-weight plus guardian
+shortfall, Qwen passed only by guardian protection, and the next three cPoCs
+passed.
 
 | participant | weight | cPoC #1 result | next cPoCs | proposed restitution |
 | --- | ---: | --- | --- | ---: |
@@ -16,10 +16,10 @@ guardian protection, and the next three cPoCs passed.
 
 Draft restitution for that direct-failure row: **10,262.057515 GONKA**.
 
-The full case is broader. Direct chain data shows additional Kimi cPoC #1
-non-submit / non-voting candidates. Those are not yet included in the proposed
-restitution total because GRC still needs to confirm which rows were caused by
-preserved-node state and how the accepted counterfactual should treat them.
+The audit also found related non-victim signals: one additional Qwen guardian
+no-vote row that still passed by weight, plus Kimi cPoC #1 non-submit /
+non-voting source candidates. Those rows help explain the validation shortfall
+but do not themselves match the described victim pattern.
 
 ## Direct Chain Evidence
 
@@ -50,9 +50,9 @@ For the next three cPoCs, the same participant submitted Kimi and passed:
 Actual epoch reward for this participant from
 `epoch_performance_summary/267/{address}` is zero.
 
-## Eligibility Rule Used
+## Full-Case Eligibility Rule
 
-The classification is intentionally narrow for this first case decision:
+The confirmed victim rule is:
 
 - participant was in epoch 267 aggregate `epoch_group_data`;
 - actual rewarded coins were zero;
@@ -85,9 +85,8 @@ cPoC #1 status distribution:
 | Qwen pass by guardian | 1 |
 | Qwen pass by guardian and Kimi weight plus guardian shortfall | 1 |
 
-So, under the narrow direct-failure rule, exactly one participant had cPoC #1
-Kimi shortfall that maps to zero reward and clean later passes. This does not
-prove that only one participant was affected by the preserved-node bug.
+So, under the full described failure rule, exactly one participant had cPoC #1
+Kimi shortfall that maps to zero reward and clean later passes.
 
 Across all four cPoCs, the direct chain status check found one shortfall row:
 
@@ -95,11 +94,23 @@ Across all four cPoCs, the direct chain status check found one shortfall row:
 | --- | --- | ---: | --- |
 | `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | cPoC #1 Kimi weight plus guardian shortfall | 0.000000 | included |
 
-## Candidate Preserved-Node Cohort
+## Related Non-Victim Signals
+
+The full-case matrix includes every directly observable cPoC #1 guardian-skip
+or failure row:
+
+| row type | participant | model | status | conclusion |
+| --- | --- | --- | --- | --- |
+| confirmed victim | `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | Kimi | weight plus guardian shortfall, reward 0 | eligible |
+| related guardian skip | `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | Qwen | passed by guardian protection | same victim, no separate restitution row |
+| related guardian skip | `gonka1w29nvdy6caqtrw30whz9h6ghl0xszwh3egndah` | Qwen | passed by weight with one guardian no-vote | not a Kimi/preserved failure victim |
+
+### Kimi Non-Voting Source Candidates
 
 Direct chain data at cPoC #1 also shows Kimi subgroup members that either did
-not submit a Kimi commit or made no Kimi validation rows. These are candidate
-preserved-node rows, not finalized restitution rows:
+not submit a Kimi commit or made no Kimi validation rows. These are possible
+causal source rows for the shortfall, not restitution victims from the
+described Votkon failure:
 
 | participant | Kimi voting power | cPoC #1 Kimi commit | Kimi validations made | full-weight reward gap |
 | --- | ---: | --- | ---: | ---: |
@@ -108,7 +119,7 @@ preserved-node rows, not finalized restitution rows:
 | `gonka168rtjfkszuhcggg4dfyse4yh7xn9zwfglnkns2` | 7,068 | no | 0 | 5.257740 GONKA |
 | `gonka1kx9mca3xm8u8ypzfuhmxey66u0ufxhs7nm6wc5` | 3,083 | no | 19 | 6.835062 GONKA |
 
-Other Kimi cPoC #1 non-submit rows have zero full-weight gap under the current
+Other Kimi cPoC #1 non-submit rows have zero full-weight gap under the
 full-weight comparison. The full candidate export is
 `output/case3_kimi_cpoc1_non_submit_candidates.csv`.
 
@@ -152,6 +163,7 @@ Result:
 | `output/case3_summary.json` | machine-readable result summary |
 | `output/case3_per_participant.csv` | all participants and cPoC statuses |
 | `output/case3_affected_no_vote_validators.csv` | no-vote validator detail for affected row |
+| `output/case3_full_case_matrix.csv` | confirmed victim plus every related cPoC #1 guardian-skip / Kimi non-voting signal |
 | `output/case3_kimi_cpoc1_non_submit_candidates.csv` | Kimi cPoC #1 non-submit / non-voting candidate rows |
 | `output/raw_chain/` | cached raw node1-node4 direct-chain API responses |
 
@@ -160,6 +172,6 @@ Result:
 The chain endpoints used here do not expose an explicit historical "preserved"
 flag for the Kimi/Qwen nodes at height `4122271`. The chain evidence is
 consistent with the reported preserved-node explanation, but this report does
-not independently label any validator or ML node as preserved. It separates
-the directly provable restitution row from candidate preserved-node rows that
-need validator confirmation before they are added to the final affected cohort.
+not independently label any validator or ML node as preserved. It identifies
+victims through observable failed cPoC status, guardian no-votes, and reward
+loss, and lists non-victim source candidates separately.
