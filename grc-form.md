@@ -214,4 +214,4 @@ Fill only after the checklist above is complete.
 | Validator | @dem_ww | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3 |
 | Validator | @votkon | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3 |
 
-Expected completion date:
+Expected completion date: 2026-05-30
