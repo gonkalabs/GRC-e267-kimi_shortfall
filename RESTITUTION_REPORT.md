@@ -5,22 +5,21 @@ node1-node4 only.
 
 ## Summary
 
-The current audit has a narrow direct-symptom result, not the final full
-affected cohort. It found **1 participant** matching the exact reported
-symptom: zero reward, simultaneous Qwen and Kimi guardian/weight shortfall at
-cPoC #1, and the next three cPoCs passing.
+The current audit has a narrow direct-failure result, not the final full
+affected cohort. It found **1 participant** with zero reward where cPoC #1
+Kimi failed by validation-weight plus guardian shortfall, Qwen passed only by
+guardian protection, and the next three cPoCs passed.
 
 | participant | weight | cPoC #1 result | next cPoCs | proposed restitution |
 | --- | ---: | --- | --- | ---: |
-| `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | 19,518 | Qwen and Kimi both `weight_and_guardian_shortfall` | Kimi pass, Kimi pass, Kimi pass | **10,262.057515 GONKA** |
+| `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | 19,518 | Qwen `pass_guardian`; Kimi `weight_and_guardian_shortfall` | Kimi `pass_guardian`, Kimi `pass_guardian`, Kimi `pass_guardian` | **10,262.057515 GONKA** |
 
-Draft restitution for that direct-symptom row: **10,262.057515 GONKA**.
+Draft restitution for that direct-failure row: **10,262.057515 GONKA**.
 
-The full case is broader. The root bug is that high-voting-power Kimi nodes
-were preserved for the cPoC event, but the event evaluation did not correctly
-credit preserved node weight. The next required step is to reconstruct the
-event-local preserved-node set and recompute which participants lost
-confirmation weight because of that bug.
+The full case is broader. Direct chain data shows additional Kimi cPoC #1
+non-submit / non-voting candidates. Those are not yet included in the proposed
+restitution total because GRC still needs to confirm which rows were caused by
+preserved-node state and how the accepted counterfactual should treat them.
 
 ## Direct Chain Evidence
 
@@ -28,25 +27,25 @@ Epoch 267 has four confirmation PoC events:
 
 | cPoC | trigger height | affected participant status |
 | --- | ---: | --- |
-| #1 | `4122271` | Qwen and Kimi both failed by weight plus guardian shortfall |
-| #2 | `4130085` | Kimi passed |
-| #3 | `4133665` | Kimi passed |
-| #4 | `4134529` | Kimi passed |
+| #1 | `4122271` | Qwen passed by guardian protection; Kimi failed by weight plus guardian shortfall |
+| #2 | `4130085` | Kimi passed by guardian protection |
+| #3 | `4133665` | Kimi passed by guardian protection |
+| #4 | `4134529` | Kimi passed by guardian protection |
 
 For the affected participant at cPoC #1:
 
 | model | submitted count | valid weight / total | guardian valid | guardian no-vote | result |
 | --- | ---: | ---: | ---: | ---: | --- |
-| Qwen | 1,024 | 93,535 / 426,417 = 0.219351 | 1 | 2 | fail |
-| Kimi | 57,664 | 114,174 / 334,289 = 0.341543 | 0 | 2 | fail |
+| Qwen | 1,024 | 129,251 / 541,415 = 0.238728 | 1 | 2 | pass by guardian |
+| Kimi | 57,664 | 171,571 / 541,415 = 0.316894 | 0 | 2 | fail |
 
 For the next three cPoCs, the same participant submitted Kimi and passed:
 
 | cPoC | model | submitted count | valid weight / total | guardian valid | result |
 | --- | --- | ---: | ---: | ---: | --- |
-| #2 | Kimi | 57,408 | 178,021 / 334,289 = 0.532536 | 2 | pass |
-| #3 | Kimi | 45,376 | 241,740 / 334,289 = 0.723147 | 2 | pass |
-| #4 | Kimi | 57,888 | 250,650 / 334,289 = 0.749800 | 2 | pass |
+| #2 | Kimi | 57,408 | 239,088 / 541,415 = 0.441598 | 2 | pass by guardian |
+| #3 | Kimi | 45,376 | 302,807 / 541,415 = 0.559288 | 2 | pass by guardian |
+| #4 | Kimi | 57,888 | 311,717 / 541,415 = 0.575745 | 2 | pass by guardian |
 
 Actual epoch reward for this participant from
 `epoch_performance_summary/267/{address}` is zero.
@@ -58,7 +57,8 @@ The classification is intentionally narrow for this first case decision:
 - participant was in epoch 267 aggregate `epoch_group_data`;
 - actual rewarded coins were zero;
 - participant submitted cPoC #1;
-- cPoC #1 failed by guardian and validation-weight shortfall;
+- cPoC #1 Kimi failed by guardian and validation-weight shortfall;
+- cPoC #1 Qwen passed only by guardian protection;
 - the next three cPoCs passed;
 - excluded participants are kept visible in the summary file.
 
@@ -79,26 +79,38 @@ cPoC #1 status distribution:
 | status | count |
 | --- | ---: |
 | no submission | 16 |
-| Qwen pass | 15 |
-| Kimi pass | 14 |
-| Qwen pass and Kimi pass | 5 |
-| Qwen and Kimi both weight plus guardian shortfall | 1 |
+| Qwen pass by weight | 14 |
+| Kimi pass by guardian | 14 |
+| Qwen pass by weight and Kimi pass by guardian | 5 |
+| Qwen pass by guardian | 1 |
+| Qwen pass by guardian and Kimi weight plus guardian shortfall | 1 |
 
-So, under the narrow direct-symptom rule, exactly one participant had cPoC #1
-shortfall. This does not prove that only one participant was affected by the
-preserved-node bug.
+So, under the narrow direct-failure rule, exactly one participant had cPoC #1
+Kimi shortfall that maps to zero reward and clean later passes. This does not
+prove that only one participant was affected by the preserved-node bug.
 
-Across all four cPoCs there were three participants with any shortfall:
+Across all four cPoCs, the direct chain status check found one shortfall row:
 
 | participant | shortfall | reward | case #3 decision |
 | --- | --- | ---: | --- |
-| `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | cPoC #1 Qwen and Kimi weight plus guardian shortfall | 0.000000 | included |
-| `gonka1d694r00czmq75txghwjcuk07lxvc8d4ekgsha0` | cPoC #2 Qwen weight shortfall, guardians 3/3 | 232.392121 | excluded |
-| `gonka1w29nvdy6caqtrw30whz9h6ghl0xszwh3egndah` | cPoC #2 Qwen weight shortfall, guardians 3/3 | 104.103258 | excluded |
+| `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | cPoC #1 Kimi weight plus guardian shortfall | 0.000000 | included |
 
-The two excluded shortfalls are later cPoC #2 Qwen-only rows, had all three
-guardians validating, and received nonzero rewards. They do not match the
-reported Kimi/Qwen simultaneous guardian-shortfall failure mode.
+## Candidate Preserved-Node Cohort
+
+Direct chain data at cPoC #1 also shows Kimi subgroup members that either did
+not submit a Kimi commit or made no Kimi validation rows. These are candidate
+preserved-node rows, not finalized restitution rows:
+
+| participant | Kimi voting power | cPoC #1 Kimi commit | Kimi validations made | full-weight reward gap |
+| --- | ---: | --- | ---: | ---: |
+| `gonka17gpuntq09zsaqtmpe544gc32tk4424dwv5t34f` | 159,432 | no | 0 | 5,737.771988 GONKA |
+| `gonka1zktn8j65wlys8a8e38hqhf4y3x6m4x04zskkrx` | 15,605 | yes | 0 | 2,961.159336 GONKA |
+| `gonka168rtjfkszuhcggg4dfyse4yh7xn9zwfglnkns2` | 7,068 | no | 0 | 5.257740 GONKA |
+| `gonka1kx9mca3xm8u8ypzfuhmxey66u0ufxhs7nm6wc5` | 3,083 | no | 19 | 6.835062 GONKA |
+
+Other Kimi cPoC #1 non-submit rows have zero full-weight gap under the current
+full-weight comparison. The full candidate export is
+`output/case3_kimi_cpoc1_non_submit_candidates.csv`.
 
 ## Restitution Calculation
 
@@ -140,6 +152,7 @@ Result:
 | `output/case3_summary.json` | machine-readable result summary |
 | `output/case3_per_participant.csv` | all participants and cPoC statuses |
 | `output/case3_affected_no_vote_validators.csv` | no-vote validator detail for affected row |
+| `output/case3_kimi_cpoc1_non_submit_candidates.csv` | Kimi cPoC #1 non-submit / non-voting candidate rows |
 | `output/raw_chain/` | cached raw node1-node4 direct-chain API responses |
 
 ## Caveats
@@ -147,6 +160,6 @@ Result:
 The chain endpoints used here do not expose an explicit historical "preserved"
 flag for the Kimi/Qwen nodes at height `4122271`. The chain evidence is
 consistent with the reported preserved-node explanation, but this report does
-not independently label any validator as preserved. It proves the directly
-observable effect: simultaneous Kimi and Qwen validation-weight shortfall,
-two guardian no-votes, zero reward, and clean passes in the next three cPoCs.
+not independently label any validator or ML node as preserved. It separates
+the directly provable restitution row from candidate preserved-node rows that
+need validator confirmation before they are added to the final affected cohort.

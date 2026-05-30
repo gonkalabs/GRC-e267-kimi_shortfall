@@ -21,10 +21,10 @@ node1, node2, node3, and node4.
 
 | Question | Answer |
 | --- | --- |
-| What happened? | During one cPoC in epoch 267, two large Kimi nodes were reportedly preserved. At the same time, two guardian nodes failed to validate the proposer address. The combined effect was a validation shortfall. |
+| What happened? | During one cPoC in epoch 267, two large Kimi nodes were reportedly preserved. At the same time, two guardian nodes failed to validate the proposer address. Direct chain data shows Kimi failed by validation-weight plus guardian shortfall; Qwen had a weight shortfall but passed by guardian protection. |
 | Why might restitution be needed? | The proposer reports that the node behaved the same as in previous epochs and passed the next three cPoC events in the same epoch, but failed this specific cPoC and received zero rewards. If the failure was caused by preserved high-voting-power nodes plus guardian validation skips, the participant may have lost rewards due to a network/software issue. |
-| Who may be affected? | The narrow direct-symptom check currently identifies `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6`. The full affected cohort still needs preserved-node counterfactual reconstruction. |
-| What is already confirmed? | Direct chain data shows the participant submitted cPoC #1, failed both Qwen and Kimi by validation-weight plus guardian shortfall, received zero epoch reward, and passed the next three cPoCs. Core-team note: `poc/proofs` was not exempted from API rate limiting, so proof artifact requests could be blocked. |
+| Who may be affected? | The narrow direct-failure check currently identifies `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6`. Additional Kimi cPoC #1 non-submit / non-voting candidates are listed in `output/case3_kimi_cpoc1_non_submit_candidates.csv`; the full affected cohort still needs preserved-node counterfactual confirmation. |
+| What is already confirmed? | Direct chain data shows the participant submitted cPoC #1, had Qwen `pass_guardian`, had Kimi `weight_and_guardian_shortfall`, received zero epoch reward, and passed the next three cPoCs. Core-team note: `poc/proofs` was not exempted from API rate limiting, so proof artifact requests could be blocked. |
 | What is still uncertain? | The direct chain endpoints used in the audit do not expose an explicit historical "preserved" label at height `4122271`. Exact fix commit and release/deployment timestamp still need final validator confirmation. |
 
 ## 3. Timeline
@@ -34,7 +34,7 @@ Use UTC times. Add block heights when available.
 | Event | Epoch | Block | Time (UTC) | Source / link | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Issue starts | 267 | `4122271` |  | Direct chain cPoC event | cPoC #1 in epoch 267 |
-| First known impact | 267 | `4122271` |  | Direct chain audit; @votkon report | Participant failed Qwen and Kimi for cPoC #1 and received zero rewards |
+| First known impact | 267 | `4122271` |  | Direct chain audit; @votkon report | Participant failed Kimi for cPoC #1 and received zero rewards; Qwen passed by guardian protection |
 | Fix or mitigation available |  |  |  | Core-team comments; v0.2.13 | Reported as the reason for the v0.2.13 post-cancellation fix so such nodes would not remain preserved |
 | Rate-limit cause identified |  |  |  | https://github.com/gonka-ai/gonka/blob/d8b8e9073d1a420d344d3ecc33ef23957f4142b1/deploy/join/docker-compose.yml#L133 | `poc/proofs` missing from `GONKA_API_EXEMPT_ROUTES`; artifact requests could be blocked by rate limiter |
 | Issue ends |  |  |  |  | Needs confirmation from v0.2.13 deployment and chain behavior after the fix |
@@ -44,7 +44,7 @@ Use UTC times. Add block heights when available.
 | Question | Answer |
 | --- | --- |
 | What should have happened? | Guardian nodes should have been able to fetch PoC proof artifacts and validate the participant normally. Preserved high-voting-power Kimi nodes should not have caused a validation shortfall that makes otherwise healthy participants fail cPoC. |
-| What actually happened? | Two large Kimi nodes were reportedly preserved, and two guardian nodes did not validate the proposer. The validation shortfall affected both Qwen and Kimi for the proposer and caused failure of this specific cPoC, while the next three cPoCs passed. |
+| What actually happened? | Two large Kimi nodes were reportedly preserved, and two guardian nodes did not validate the proposer. The proposer had Kimi failure in this specific cPoC, while Qwen passed by guardian protection and the next three cPoCs passed. |
 | What component caused or may have caused it? | Likely interaction between cPoC preservation logic, Kimi high-voting-power preserved nodes, guardian validation, API proof artifact fetching, and API rate limiting. |
 | What commit, release, config, or migration is involved? | Config at `deploy/join/docker-compose.yml` around `GONKA_API_EXEMPT_ROUTES`; `poc/proofs` was reportedly missing at commit `d8b8e9073d1a420d344d3ecc33ef23957f4142b1`. The protective fix is reported to be in v0.2.13 after the cancellation. Exact fix commit still needs to be identified. |
 | Is the issue fixed? | Reported fixed in v0.2.13; needs verification against the exact patch and post-fix behavior. |
@@ -58,8 +58,8 @@ Use UTC times. Add block heights when available.
 | Affected model / subgroup, if relevant | Kimi is central to the report; Qwen was reportedly also skipped for the proposer |
 | Affected rounds, CPoCs, or epochs | Epoch 267 cPoC #1 at trigger height `4122271` |
 | Baseline state to compare against | Previous successful epochs for the same node and the next three successful cPoCs in epoch 267 |
-| Estimated affected count | At least 1 direct-symptom participant; full count still under investigation |
-| Estimated restitution exposure | At least 10,262.057515 GONKA under the narrow symptom rule; full preserved-node impact still under investigation |
+| Estimated affected count | 1 direct-failure participant plus additional Kimi cPoC #1 non-submit / non-voting candidates pending preserved-node confirmation |
+| Estimated restitution exposure | 10,262.057515 GONKA under the narrow direct-failure rule; candidate preserved-node exposure still under investigation |
 
 ## 6. Eligibility Draft
 
@@ -90,7 +90,7 @@ investigation, but GRC should agree on the starting point.
 | Case type | Why it is ambiguous |
 | --- | --- |
 | Participants with partial rewards | GRC must decide whether to subtract actual rewards or exclude them |
-| Participants with only one model affected | The proposer reports both Qwen and Kimi skipped simultaneously, but other cases may be partial |
+| Participants with only one model affected | Direct chain data shows Kimi failure for the direct row and Qwen guardian protection; GRC should decide whether partial-model impact is enough |
 | Participants near the pass/fail threshold | Need full recomputation or strong spot checks |
 | Participants where preserved-node state cannot be reconstructed | The main known investigation blocker is where to pull preserved nodes from at the exact point in time |
 | Participants with operator-side logs showing local issues | Could be unrelated to the network bug |
@@ -170,7 +170,7 @@ check the case.
 | --- | --- |
 | Which exact cPoC in epoch 267 is the official case window? | Draft: cPoC #1, trigger height `4122271` |
 | What is the accepted source of preserved-node state at that historical point? | Still open; direct chain endpoints used here do not expose an explicit historical preserved label |
-| Should eligibility require both Qwen and Kimi validation skips, or is one affected model enough? |  |
+| Should eligibility require final cPoC failure, or is a confirmed preserved-node reward reduction enough? |  |
 | Should partial rewards be subtracted? |  |
 | Should participants with misses or invalidations be included if the core issue is proven? |  |
 | How should ambiguous near-threshold cases be handled? |  |

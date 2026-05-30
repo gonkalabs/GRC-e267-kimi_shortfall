@@ -48,8 +48,7 @@ GUARDIANS = (
     "gonka1dkl4mah5erqggvhqkpc8j3qs5tyuetgdy552cp",
     "gonka1kx9mca3xm8u8ypzfuhmxey66u0ufxhs7nm6wc5",
 )
-PASS_WEIGHT_RATIO = Decimal("0.5")
-MIN_GUARDIAN_VALID = 2
+TWO_THIRDS = Decimal(2) / Decimal(3)
 HTTP_TIMEOUT = 30
 HTTP_RETRIES = 3
 USER_AGENT = "grc-e267-chain-only-audit/1.0"
@@ -190,6 +189,14 @@ def build_weight_map(aggregate: dict) -> dict[str, int]:
     }
 
 
+def build_voting_power_map(model_group: dict) -> dict[str, int]:
+    return {
+        str(vw.get("member_address") or ""): int_of(vw.get("voting_power"))
+        for vw in model_group.get("validation_weights") or []
+        if vw.get("member_address")
+    }
+
+
 def flatten_validations(payload: dict) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for group in payload.get("poc_validation") or []:
@@ -206,6 +213,7 @@ def vote_summary(
     model_id: str,
     validator_universe: set[str],
     weights: dict[str, int],
+    total_network_weight: int,
 ) -> VoteSummary:
     by_validator: dict[str, int] = {}
     for row in rows:
@@ -235,7 +243,7 @@ def vote_summary(
                 guardian_no_vote += 1
             continue
         value = by_validator[validator]
-        if value < 0:
+        if value <= 0:
             invalid_count += 1
             invalid_weight += weight
             invalid_validators.append((validator, weight))
@@ -248,18 +256,23 @@ def vote_summary(
             if validator in GUARDIANS:
                 guardian_valid += 1
 
-    total_weight = sum(weights.get(v, 0) for v in validator_universe)
-    weight_pass = Decimal(valid_weight) >= (Decimal(total_weight) * PASS_WEIGHT_RATIO)
-    guardian_pass = guardian_valid >= MIN_GUARDIAN_VALID
-    passed = bool(weight_pass and guardian_pass)
-    if passed:
-        reason = "pass"
-    elif not weight_pass and not guardian_pass:
-        reason = "weight_and_guardian_shortfall"
-    elif not weight_pass:
-        reason = "weight_shortfall"
+    total_weight = total_network_weight
+    two_thirds = total_network_weight * 2 // 3
+    weight_pass = valid_weight > two_thirds
+    invalid_weight_reject = invalid_weight > two_thirds
+    guardian_pass = guardian_valid > 0 and guardian_invalid == 0
+    guardian_reject = guardian_invalid > 0 and guardian_valid == 0
+    passed = bool(weight_pass or guardian_pass)
+    if weight_pass:
+        reason = "pass_weight"
+    elif guardian_pass:
+        reason = "pass_guardian"
+    elif invalid_weight_reject:
+        reason = "invalid_weight_majority"
+    elif guardian_reject:
+        reason = "guardian_invalid"
     else:
-        reason = "guardian_shortfall"
+        reason = "weight_and_guardian_shortfall"
 
     return VoteSummary(
         valid_count=valid_count,
@@ -321,6 +334,10 @@ def audit(args: argparse.Namespace) -> None:
         QWEN: model_members(qwen_group),
         KIMI: model_members(kimi_group),
     }
+    model_voting_powers = {
+        QWEN: build_voting_power_map(qwen_group),
+        KIMI: build_voting_power_map(kimi_group),
+    }
     log(f"qwen members={len(universes[QWEN])} kimi members={len(universes[KIMI])}")
 
     stage_commits: dict[int, dict[tuple[str, str], int]] = {}
@@ -373,9 +390,10 @@ def audit(args: argparse.Namespace) -> None:
                     participant=addr,
                     model_id=mid,
                     validator_universe=universes.get(mid) or set(weights),
-                    weights=weights,
+                    weights=model_voting_powers.get(mid) or weights,
+                    total_network_weight=root_total_weight,
                 )
-                model_bits.append(f"{short_model(mid)}:{'pass' if summary.passed else summary.reason}")
+                model_bits.append(f"{short_model(mid)}:{summary.reason if summary.passed else summary.reason}")
                 detail_models[short_model(mid)] = {
                     "count": stage_commits[h].get((addr, mid), 0),
                     "passed": summary.passed,
@@ -434,8 +452,8 @@ def audit(args: argparse.Namespace) -> None:
                 "root_total_weight": root_total_weight,
                 "epoch_reward_ngonka": epoch_reward,
                 "epoch_reward_gonka": ngonka_to_gonka(epoch_reward),
-                "pass_weight_ratio": str(PASS_WEIGHT_RATIO),
-                "min_guardian_valid": MIN_GUARDIAN_VALID,
+                "pass_weight_ratio": str(TWO_THIRDS),
+                "guardian_rule": "pass if guardian_valid > 0 and guardian_invalid == 0",
                 "cpoc1": per_stage_status[0] if len(per_stage_status) > 0 else "",
                 "cpoc2": per_stage_status[1] if len(per_stage_status) > 1 else "",
                 "cpoc3": per_stage_status[2] if len(per_stage_status) > 2 else "",
@@ -457,12 +475,13 @@ def audit(args: argparse.Namespace) -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
     csv_path = os.path.join(OUT_DIR, "case3_per_participant.csv")
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
     affected_rows = [r for r in rows if r["affected"]]
     shortfall_rows = [r for r in rows if any("shortfall" in str(r.get(f"cpoc{i}", "")) for i in range(1, 5))]
+    row_by_addr = {r["participant_address"]: r for r in rows}
     no_vote_detail_path = os.path.join(OUT_DIR, "case3_affected_no_vote_validators.csv")
     with open(no_vote_detail_path, "w", newline="", encoding="utf-8") as f:
         fieldnames = [
@@ -473,7 +492,7 @@ def audit(args: argparse.Namespace) -> None:
             "validator_weight",
             "rank_by_weight",
         ]
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for r in affected_rows:
             details = json.loads(r["event_details_json"])
@@ -490,6 +509,80 @@ def audit(args: argparse.Namespace) -> None:
                                 "rank_by_weight": idx,
                             }
                         )
+    kimi_candidates: list[dict[str, Any]] = []
+    if stage_heights:
+        first_stage = stage_heights[0]
+        first_stage_commits = stage_commits[first_stage]
+        first_stage_validations = stage_validations[first_stage]
+        for vw in kimi_group.get("validation_weights") or []:
+            addr = str(vw.get("member_address") or "")
+            if not addr:
+                continue
+            submitted = first_stage_commits.get((addr, KIMI), 0) > 0
+            validations_made = sum(
+                1
+                for item in first_stage_validations
+                if item.get("model_id") == KIMI
+                and item.get("validator_participant_address") == addr
+            )
+            if submitted and validations_made > 0:
+                continue
+            root_row = row_by_addr.get(addr, {})
+            full_expected = (
+                int((Decimal(weights.get(addr, 0)) / Decimal(root_total_weight) * Decimal(epoch_reward)).to_integral_value())
+                if root_total_weight
+                else 0
+            )
+            actual_reward = int_of(root_row.get("actual_reward_ngonka"))
+            candidate_gap = max(0, full_expected - actual_reward)
+            kimi_candidates.append(
+                {
+                    "participant_address": addr,
+                    "kimi_voting_power": int_of(vw.get("voting_power")),
+                    "root_weight": weights.get(addr, 0),
+                    "kimi_weight": int_of(vw.get("weight")),
+                    "submitted_kimi_cpoc1": submitted,
+                    "kimi_validations_made_cpoc1": validations_made,
+                    "actual_reward_gonka": root_row.get("actual_reward_gonka", "0.000000"),
+                    "full_weight_expected_gonka": ngonka_to_gonka(full_expected),
+                    "full_weight_gap_gonka": ngonka_to_gonka(candidate_gap),
+                    "candidate_note": "cPoC #1 Kimi subgroup member with no Kimi commit or no Kimi validation rows; causal preserved-node status still requires validator confirmation",
+                    "kimi_nodes_json": json.dumps(
+                        [
+                            {
+                                "node_id": node.get("node_id"),
+                                "poc_weight": node.get("poc_weight"),
+                            }
+                            for node in (vw.get("ml_nodes") or [])
+                        ],
+                        sort_keys=True,
+                    ),
+                }
+            )
+        kimi_candidates.sort(
+            key=lambda r: (
+                -int(r["kimi_voting_power"]),
+                r["participant_address"],
+            )
+        )
+    kimi_candidates_path = os.path.join(OUT_DIR, "case3_kimi_cpoc1_non_submit_candidates.csv")
+    with open(kimi_candidates_path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = [
+            "participant_address",
+            "kimi_voting_power",
+            "root_weight",
+            "kimi_weight",
+            "submitted_kimi_cpoc1",
+            "kimi_validations_made_cpoc1",
+            "actual_reward_gonka",
+            "full_weight_expected_gonka",
+            "full_weight_gap_gonka",
+            "candidate_note",
+            "kimi_nodes_json",
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(kimi_candidates)
     zero_reward_rows = [r for r in rows if r["zero_reward"]]
     summary = {
         "epoch": epoch,
@@ -502,6 +595,7 @@ def audit(args: argparse.Namespace) -> None:
         "participants": len(rows),
         "zero_reward_participants": len(zero_reward_rows),
         "affected_participants": len(affected_rows),
+        "kimi_cpoc1_non_submit_or_non_voting_candidates": len(kimi_candidates),
         "total_restitution_ngonka": sum(int(r["restitution_ngonka"]) for r in affected_rows),
         "total_restitution_gonka": float(sum(Decimal(r["restitution_ngonka"]) for r in affected_rows) / Decimal(1_000_000_000)),
         "cpoc_status_counts": {
@@ -528,7 +622,7 @@ def audit(args: argparse.Namespace) -> None:
             "classification": "zero reward + cPoC1 guardian/weight shortfall + next three cPoCs pass",
             "restitution_formula": "participant_weight / root_total_weight * fixed_epoch_reward - actual_reward",
             "denominator": "aggregate epoch_group_data.total_weight",
-            "pass_rule": "valid_weight >= 0.5 * model_total_weight and guardian_valid >= 2",
+            "pass_rule": "valid_weight > 2/3 * total_network_weight, or guardian_valid > 0 with guardian_invalid == 0",
         },
         "affected": [
             {
@@ -541,6 +635,16 @@ def audit(args: argparse.Namespace) -> None:
                 "restitution_gonka": r["restitution_gonka"],
             }
             for r in affected_rows
+        ],
+        "kimi_cpoc1_non_submit_or_non_voting_candidates_top": [
+            {
+                "participant_address": r["participant_address"],
+                "kimi_voting_power": r["kimi_voting_power"],
+                "submitted_kimi_cpoc1": r["submitted_kimi_cpoc1"],
+                "kimi_validations_made_cpoc1": r["kimi_validations_made_cpoc1"],
+                "full_weight_gap_gonka": r["full_weight_gap_gonka"],
+            }
+            for r in kimi_candidates[:10]
         ],
         "zero_reward_non_affected": [
             {
@@ -561,6 +665,7 @@ def audit(args: argparse.Namespace) -> None:
 
     log(f"wrote {csv_path}")
     log(f"wrote {no_vote_detail_path}")
+    log(f"wrote {kimi_candidates_path}")
     log(f"affected={len(affected_rows)} total={summary['total_restitution_gonka']:.6f} GONKA")
     for r in affected_rows:
         log(f"  {r['participant_address']} weight={r['weight']} loss={r['restitution_gonka']} cpoc1={r['cpoc1']}")

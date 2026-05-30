@@ -1,10 +1,10 @@
 {
   "affected": [
     {
-      "cpoc1": "Qwen:weight_and_guardian_shortfall;Kimi:weight_and_guardian_shortfall",
-      "cpoc2": "Kimi:pass",
-      "cpoc3": "Kimi:pass",
-      "cpoc4": "Kimi:pass",
+      "cpoc1": "Qwen:pass_guardian;Kimi:weight_and_guardian_shortfall",
+      "cpoc2": "Kimi:pass_guardian",
+      "cpoc3": "Kimi:pass_guardian",
+      "cpoc4": "Kimi:pass_guardian",
       "participant_address": "gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6",
       "restitution_gonka": "10262.057515",
       "weight": 19518
@@ -15,35 +15,13 @@
     {
       "actual_reward_gonka": "0.000000",
       "affected": true,
-      "cpoc1": "Qwen:weight_and_guardian_shortfall;Kimi:weight_and_guardian_shortfall",
-      "cpoc2": "Kimi:pass",
-      "cpoc3": "Kimi:pass",
-      "cpoc4": "Kimi:pass",
+      "cpoc1": "Qwen:pass_guardian;Kimi:weight_and_guardian_shortfall",
+      "cpoc2": "Kimi:pass_guardian",
+      "cpoc3": "Kimi:pass_guardian",
+      "cpoc4": "Kimi:pass_guardian",
       "participant_address": "gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6",
       "weight": 19518,
       "why_excluded": ""
-    },
-    {
-      "actual_reward_gonka": "232.392121",
-      "affected": false,
-      "cpoc1": "Qwen:pass",
-      "cpoc2": "Qwen:weight_shortfall",
-      "cpoc3": "no_submit",
-      "cpoc4": "no_submit",
-      "participant_address": "gonka1d694r00czmq75txghwjcuk07lxvc8d4ekgsha0",
-      "weight": 442,
-      "why_excluded": "shortfall is outside cPoC #1 Kimi/Qwen guardian-shortfall pattern or participant received nonzero rewards"
-    },
-    {
-      "actual_reward_gonka": "104.103258",
-      "affected": false,
-      "cpoc1": "Qwen:pass",
-      "cpoc2": "Qwen:weight_shortfall",
-      "cpoc3": "no_submit",
-      "cpoc4": "no_submit",
-      "participant_address": "gonka1w29nvdy6caqtrw30whz9h6ghl0xszwh3egndah",
-      "weight": 200,
-      "why_excluded": "shortfall is outside cPoC #1 Kimi/Qwen guardian-shortfall pattern or participant received nonzero rewards"
     }
   ],
   "chain_api_bases": [
@@ -54,29 +32,30 @@
   ],
   "cpoc_status_counts": {
     "cpoc1": {
-      "Kimi:pass": 14,
-      "Qwen:pass": 15,
-      "Qwen:pass;Kimi:pass": 5,
-      "Qwen:weight_and_guardian_shortfall;Kimi:weight_and_guardian_shortfall": 1,
+      "Kimi:pass_guardian": 14,
+      "Qwen:pass_guardian": 1,
+      "Qwen:pass_guardian;Kimi:weight_and_guardian_shortfall": 1,
+      "Qwen:pass_weight": 14,
+      "Qwen:pass_weight;Kimi:pass_guardian": 5,
       "no_submit": 16
     },
     "cpoc2": {
-      "Kimi:pass": 15,
-      "Qwen:pass": 16,
-      "Qwen:pass;Kimi:pass": 5,
-      "Qwen:weight_shortfall": 2,
+      "Kimi:pass_guardian": 15,
+      "Qwen:pass_guardian": 2,
+      "Qwen:pass_weight": 16,
+      "Qwen:pass_weight;Kimi:pass_guardian": 5,
       "no_submit": 13
     },
     "cpoc3": {
-      "Kimi:pass": 12,
-      "Qwen:pass": 14,
-      "Qwen:pass;Kimi:pass": 6,
+      "Kimi:pass_guardian": 12,
+      "Qwen:pass_weight": 14,
+      "Qwen:pass_weight;Kimi:pass_guardian": 6,
       "no_submit": 19
     },
     "cpoc4": {
-      "Kimi:pass": 15,
-      "Qwen:pass": 16,
-      "Qwen:pass;Kimi:pass": 3,
+      "Kimi:pass_guardian": 15,
+      "Qwen:pass_weight": 16,
+      "Qwen:pass_weight;Kimi:pass_guardian": 3,
       "no_submit": 17
     }
   },
@@ -89,11 +68,70 @@
   "epoch": 267,
   "epoch_reward_gonka": 284661.946392228,
   "epoch_reward_ngonka": 284661946392228,
+  "kimi_cpoc1_non_submit_or_non_voting_candidates": 8,
+  "kimi_cpoc1_non_submit_or_non_voting_candidates_top": [
+    {
+      "full_weight_gap_gonka": "5737.771988",
+      "kimi_validations_made_cpoc1": 0,
+      "kimi_voting_power": 159432,
+      "participant_address": "gonka17gpuntq09zsaqtmpe544gc32tk4424dwv5t34f",
+      "submitted_kimi_cpoc1": false
+    },
+    {
+      "full_weight_gap_gonka": "2961.159336",
+      "kimi_validations_made_cpoc1": 0,
+      "kimi_voting_power": 15605,
+      "participant_address": "gonka1zktn8j65wlys8a8e38hqhf4y3x6m4x04zskkrx",
+      "submitted_kimi_cpoc1": true
+    },
+    {
+      "full_weight_gap_gonka": "5.257740",
+      "kimi_validations_made_cpoc1": 0,
+      "kimi_voting_power": 7068,
+      "participant_address": "gonka168rtjfkszuhcggg4dfyse4yh7xn9zwfglnkns2",
+      "submitted_kimi_cpoc1": false
+    },
+    {
+      "full_weight_gap_gonka": "0.000000",
+      "kimi_validations_made_cpoc1": 0,
+      "kimi_voting_power": 4050,
+      "participant_address": "gonka1830lqug50lse998x2lakk4pj5ypfumz5pasz0y",
+      "submitted_kimi_cpoc1": false
+    },
+    {
+      "full_weight_gap_gonka": "6.835062",
+      "kimi_validations_made_cpoc1": 19,
+      "kimi_voting_power": 3083,
+      "participant_address": "gonka1kx9mca3xm8u8ypzfuhmxey66u0ufxhs7nm6wc5",
+      "submitted_kimi_cpoc1": false
+    },
+    {
+      "full_weight_gap_gonka": "0.000000",
+      "kimi_validations_made_cpoc1": 0,
+      "kimi_voting_power": 2153,
+      "participant_address": "gonka1mmlyd5xxu5l68yx8wzclrkxkxvm88mhq5tp5s0",
+      "submitted_kimi_cpoc1": false
+    },
+    {
+      "full_weight_gap_gonka": "0.000000",
+      "kimi_validations_made_cpoc1": 0,
+      "kimi_voting_power": 2061,
+      "participant_address": "gonka19cjm4c5mt3j3qdr8vhytmm4hef3pnkvkm0x7m2",
+      "submitted_kimi_cpoc1": false
+    },
+    {
+      "full_weight_gap_gonka": "0.000000",
+      "kimi_validations_made_cpoc1": 0,
+      "kimi_voting_power": 1087,
+      "participant_address": "gonka15p7s7w2hx0y8095lddd4ummm2y0kwpwljk00aq",
+      "submitted_kimi_cpoc1": false
+    }
+  ],
   "participants": 51,
   "policy": {
     "classification": "zero reward + cPoC1 guardian/weight shortfall + next three cPoCs pass",
     "denominator": "aggregate epoch_group_data.total_weight",
-    "pass_rule": "valid_weight >= 0.5 * model_total_weight and guardian_valid >= 2",
+    "pass_rule": "valid_weight > 2/3 * total_network_weight, or guardian_valid > 0 with guardian_invalid == 0",
     "restitution_formula": "participant_weight / root_total_weight * fixed_epoch_reward - actual_reward"
   },
   "root_total_weight": 541415,
@@ -111,10 +149,10 @@
       "why_excluded": "does not match narrow case #3 pattern"
     },
     {
-      "cpoc1": "Kimi:pass",
-      "cpoc2": "Kimi:pass",
+      "cpoc1": "Kimi:pass_guardian",
+      "cpoc2": "Kimi:pass_guardian",
       "cpoc3": "no_submit",
-      "cpoc4": "Kimi:pass",
+      "cpoc4": "Kimi:pass_guardian",
       "participant_address": "gonka1ujnc662v6g69jm6fgxnr79a2m7ehzeut059239",
       "weight": 6900,
       "why_excluded": "does not match narrow case #3 pattern"
