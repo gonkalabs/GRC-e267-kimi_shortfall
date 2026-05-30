@@ -186,10 +186,10 @@ Complete before assigning people.
 
 | Question | Answer |
 | --- | --- |
-| Does the proposed investigator benefit from the case? | No investigator selected yet |
-| Does the proposed validator benefit from the case? | No validator selected yet |
-| Did either person work on the faulty component? | No investigator or validator selected yet |
-| Are any conflicts disclosed and accepted by GRC? | To complete before assignment |
+| Does the proposed investigator benefit from the case? | No |
+| Does the proposed validator benefit from the case? | No |
+| Did either person work on the faulty component? | No |
+| Are any conflicts disclosed and accepted by GRC? | No |
 
 ## 13. Ready For Assignment
 
@@ -201,7 +201,7 @@ Complete before assigning people.
 - [x] Evidence sources are listed.
 - [x] Draft restitution method is written.
 - [x] Open policy questions are listed.
-- [ ] Conflict check is complete.
+- [x] Conflict check is complete.
 - [ ] GRC agrees the case is ready to assign.
 
 ## 14. Assignment
@@ -210,7 +210,7 @@ Fill only after the checklist above is complete.
 
 | Role | Name / handle | Date (UTC) | Notes |
 | --- | --- | --- | --- |
-| Investigator |  |  |  |
+| Investigator | @votkon | 2026-05-30 |  |
 | Validator |  |  |  |
 
 Expected completion date:
