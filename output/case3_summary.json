@@ -1,0 +1,124 @@
+{
+  "affected": [
+    {
+      "cpoc1": "Qwen:weight_and_guardian_shortfall;Kimi:weight_and_guardian_shortfall",
+      "cpoc2": "Kimi:pass",
+      "cpoc3": "Kimi:pass",
+      "cpoc4": "Kimi:pass",
+      "participant_address": "gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6",
+      "restitution_gonka": "10262.057515",
+      "weight": 19518
+    }
+  ],
+  "affected_participants": 1,
+  "all_shortfall_participants": [
+    {
+      "actual_reward_gonka": "0.000000",
+      "affected": true,
+      "cpoc1": "Qwen:weight_and_guardian_shortfall;Kimi:weight_and_guardian_shortfall",
+      "cpoc2": "Kimi:pass",
+      "cpoc3": "Kimi:pass",
+      "cpoc4": "Kimi:pass",
+      "participant_address": "gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6",
+      "weight": 19518,
+      "why_excluded": ""
+    },
+    {
+      "actual_reward_gonka": "232.392121",
+      "affected": false,
+      "cpoc1": "Qwen:pass",
+      "cpoc2": "Qwen:weight_shortfall",
+      "cpoc3": "no_submit",
+      "cpoc4": "no_submit",
+      "participant_address": "gonka1d694r00czmq75txghwjcuk07lxvc8d4ekgsha0",
+      "weight": 442,
+      "why_excluded": "shortfall is outside cPoC #1 Kimi/Qwen guardian-shortfall pattern or participant received nonzero rewards"
+    },
+    {
+      "actual_reward_gonka": "104.103258",
+      "affected": false,
+      "cpoc1": "Qwen:pass",
+      "cpoc2": "Qwen:weight_shortfall",
+      "cpoc3": "no_submit",
+      "cpoc4": "no_submit",
+      "participant_address": "gonka1w29nvdy6caqtrw30whz9h6ghl0xszwh3egndah",
+      "weight": 200,
+      "why_excluded": "shortfall is outside cPoC #1 Kimi/Qwen guardian-shortfall pattern or participant received nonzero rewards"
+    }
+  ],
+  "chain_api_bases": [
+    "http://node1.gonka.ai:8000",
+    "http://node2.gonka.ai:8000",
+    "http://node3.gonka.ai:8000",
+    "http://node4.gonka.ai:8000"
+  ],
+  "cpoc_status_counts": {
+    "cpoc1": {
+      "Kimi:pass": 14,
+      "Qwen:pass": 15,
+      "Qwen:pass;Kimi:pass": 5,
+      "Qwen:weight_and_guardian_shortfall;Kimi:weight_and_guardian_shortfall": 1,
+      "no_submit": 16
+    },
+    "cpoc2": {
+      "Kimi:pass": 15,
+      "Qwen:pass": 16,
+      "Qwen:pass;Kimi:pass": 5,
+      "Qwen:weight_shortfall": 2,
+      "no_submit": 13
+    },
+    "cpoc3": {
+      "Kimi:pass": 12,
+      "Qwen:pass": 14,
+      "Qwen:pass;Kimi:pass": 6,
+      "no_submit": 19
+    },
+    "cpoc4": {
+      "Kimi:pass": 15,
+      "Qwen:pass": 16,
+      "Qwen:pass;Kimi:pass": 3,
+      "no_submit": 17
+    }
+  },
+  "cpoc_trigger_heights": [
+    4122271,
+    4130085,
+    4133665,
+    4134529
+  ],
+  "epoch": 267,
+  "epoch_reward_gonka": 284661.946392228,
+  "epoch_reward_ngonka": 284661946392228,
+  "participants": 51,
+  "policy": {
+    "classification": "zero reward + cPoC1 guardian/weight shortfall + next three cPoCs pass",
+    "denominator": "aggregate epoch_group_data.total_weight",
+    "pass_rule": "valid_weight >= 0.5 * model_total_weight and guardian_valid >= 2",
+    "restitution_formula": "participant_weight / root_total_weight * fixed_epoch_reward - actual_reward"
+  },
+  "root_total_weight": 541415,
+  "source": "direct chain API only: node1-node4",
+  "total_restitution_gonka": 10262.057515369,
+  "total_restitution_ngonka": 10262057515369,
+  "zero_reward_non_affected": [
+    {
+      "cpoc1": "no_submit",
+      "cpoc2": "no_submit",
+      "cpoc3": "no_submit",
+      "cpoc4": "no_submit",
+      "participant_address": "gonka1tmk2tzdneht6smu34pkmqdvu7p34qavvmwtwq2",
+      "weight": 1124,
+      "why_excluded": "does not match narrow case #3 pattern"
+    },
+    {
+      "cpoc1": "Kimi:pass",
+      "cpoc2": "Kimi:pass",
+      "cpoc3": "no_submit",
+      "cpoc4": "Kimi:pass",
+      "participant_address": "gonka1ujnc662v6g69jm6fgxnr79a2m7ehzeut059239",
+      "weight": 6900,
+      "why_excluded": "does not match narrow case #3 pattern"
+    }
+  ],
+  "zero_reward_participants": 3
+}

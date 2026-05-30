@@ -1,0 +1,14 @@
+[19:56:05] chain-only audit epoch=267
+[19:56:05] epoch_reward=284661.946392 GONKA
+[19:56:05] cpoc trigger heights=[4122271, 4130085, 4133665, 4134529]
+[19:56:05] aggregate participants=51 root_total_weight=541415
+[19:56:05] qwen members=34 kimi members=27
+[19:56:05] stage=4122271 commits=42 validation_rows=831
+[19:56:05] stage=4130085 commits=44 validation_rows=961
+[19:56:05] stage=4133665 commits=40 validation_rows=784
+[19:56:05] stage=4134529 commits=39 validation_rows=783
+[19:56:05] fetched reward summaries=51
+[19:56:05] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_per_participant.csv
+[19:56:05] wrote /Users/mike/Desktop/gonka-explorer/scripts/GRC-kimi-shortfall/output/case3_affected_no_vote_validators.csv
+[19:56:05] affected=1 total=10262.057515 GONKA
+[19:56:05]   gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6 weight=19518 loss=10262.057515 cpoc1=Qwen:weight_and_guardian_shortfall;Kimi:weight_and_guardian_shortfall
