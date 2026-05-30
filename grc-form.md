@@ -187,8 +187,8 @@ Complete before assigning people.
 | Question | Answer |
 | --- | --- |
 | Does the proposed investigator benefit from the case? | No |
-| Does the proposed validator benefit from the case? | No |
-| Did either person work on the faulty component? | No |
+| Does any proposed validator benefit from the case? | No |
+| Did any assigned person work on the faulty component? | No |
 | Are any conflicts disclosed and accepted by GRC? | No |
 
 ## 13. Ready For Assignment
@@ -210,7 +210,8 @@ Fill only after the checklist above is complete.
 
 | Role | Name / handle | Date (UTC) | Notes |
 | --- | --- | --- | --- |
-| Investigator | @votkon | 2026-05-30 |  |
-| Validator |  |  |  |
+| Investigator | @mikenosov | 2026-05-30 | Assigned from GRC matrix for Case #3 |
+| Validator | @dem_ww | 2026-05-30 | Assigned from GRC matrix for Case #3 |
+| Validator | @votkon | 2026-05-30 | Assigned from GRC matrix for Case #3 |
 
 Expected completion date:
