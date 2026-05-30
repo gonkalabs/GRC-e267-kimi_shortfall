@@ -210,8 +210,8 @@ Fill only after the checklist above is complete.
 
 | Role | Name / handle | Date (UTC) | Notes |
 | --- | --- | --- | --- |
-| Investigator | @mikenosov | 2026-05-30 | Assigned from GRC matrix for Case #3 |
-| Validator | @dem_ww | 2026-05-30 | Assigned from GRC matrix for Case #3 |
-| Validator | @votkon | 2026-05-30 | Assigned from GRC matrix for Case #3 |
+| Investigator | @mikenosov | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3; selected 2026-05-28 18:44 Moscow time |
+| Validator | @dem_ww | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3; selected 2026-05-28 18:44 Moscow time |
+| Validator | @votkon | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3; selected 2026-05-28 18:44 Moscow time |
 
 Expected completion date:
