@@ -12,7 +12,7 @@ cohort are identified.
 | Case ID | Case #3 / GRC-e267-kimi-shortfall |
 | Short title | Epoch 267 Kimi preserved-node validation shortfall |
 | Reporter / proposer | @votkon |
-| Date opened (UTC) | 2026-05-30 |
+| Date opened (UTC) | 2026-05-26 |
 | Related links | https://github.com/gonkalabs/GRC-e267-kimi_shortfall<br>https://github.com/gonka-ai/gonka/blob/d8b8e9073d1a420d344d3ecc33ef23957f4142b1/deploy/join/docker-compose.yml#L133 |
 | Affected epoch(s) / block range | Epoch 267; exact cPoC and block range still needs investigation |
 | Affected software version(s) | Versions before the v0.2.13 fix; exact deployed version during epoch 267 still needs confirmation |
@@ -210,8 +210,8 @@ Fill only after the checklist above is complete.
 
 | Role | Name / handle | Date (UTC) | Notes |
 | --- | --- | --- | --- |
-| Investigator | @mikenosov | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3; selected 2026-05-28 18:44 Moscow time |
-| Validator | @dem_ww | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3; selected 2026-05-28 18:44 Moscow time |
-| Validator | @votkon | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3; selected 2026-05-28 18:44 Moscow time |
+| Investigator | @mikenosov | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3 |
+| Validator | @dem_ww | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3 |
+| Validator | @votkon | 2026-05-28 15:44 UTC | Assigned from GRC matrix for Case #3 |
 
 Expected completion date:
