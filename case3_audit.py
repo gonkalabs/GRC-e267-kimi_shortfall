@@ -146,6 +146,32 @@ def ngonka_to_gonka(v: int | Decimal) -> str:
     return f"{(Decimal(v) / Decimal(1_000_000_000)):.6f}"
 
 
+def ngonka_to_gonka9(v: int | Decimal) -> str:
+    return f"{(Decimal(v) / Decimal(1_000_000_000)):.9f}"
+
+
+def display_gonka9(v: int | Decimal) -> str:
+    return f"{(Decimal(v) / Decimal(1_000_000_000)):,.9f}"
+
+
+def display_gonka6_text(value: Any) -> str:
+    try:
+        return f"{Decimal(str(value)):,.6f}"
+    except Exception:
+        return str(value)
+
+
+def markdown_cpoc_status(status: str) -> str:
+    bits = []
+    for part in status.split(";"):
+        if ":" not in part:
+            bits.append(part)
+            continue
+        model, reason = part.split(":", 1)
+        bits.append(f"{model} `{reason}`")
+    return "; ".join(bits)
+
+
 def short_model(model_id: str) -> str:
     if model_id == KIMI or "Kimi" in model_id:
         return "Kimi"
@@ -300,7 +326,7 @@ def fetch_reward(epoch: int, address: str) -> dict:
     return body.get("epochPerformanceSummary") or {}
 
 
-def audit(args: argparse.Namespace) -> None:
+def audit(args: argparse.Namespace) -> dict[str, Any]:
     if os.path.exists(LOG_PATH):
         os.remove(LOG_PATH)
     epoch = int(args.epoch)
@@ -769,13 +795,444 @@ def audit(args: argparse.Namespace) -> None:
     for r in affected_rows:
         log(f"  {r['participant_address']} weight={r['weight']} loss={r['restitution_gonka']} cpoc1={r['cpoc1']}")
 
+    return {
+        "epoch": epoch,
+        "stage_heights": stage_heights,
+        "root_total_weight": root_total_weight,
+        "epoch_reward_ngonka": epoch_reward,
+        "rows": rows,
+        "summary": summary,
+        "kimi_candidates": kimi_candidates,
+    }
+
+
+def expected_reward_for_row(row: dict[str, Any]) -> int:
+    root_total_weight = int_of(row.get("root_total_weight"))
+    if not root_total_weight:
+        return 0
+    return int(
+        (
+            Decimal(int_of(row.get("weight")))
+            / Decimal(root_total_weight)
+            * Decimal(int_of(row.get("epoch_reward_ngonka")))
+        ).to_integral_value()
+    )
+
+
+def iter_zero_reward_shortfalls(result: dict[str, Any]) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    for row in result["rows"]:
+        actual_reward = int_of(row.get("actual_reward_ngonka"))
+        if actual_reward != 0:
+            continue
+        expected_reward = expected_reward_for_row(row)
+        candidate_loss = max(0, expected_reward - actual_reward)
+        details = json.loads(row["event_details_json"])
+        for cpoc_number, event in enumerate(details, 1):
+            for model, detail in sorted((event.get("models") or {}).items()):
+                if bool(detail.get("passed")):
+                    continue
+                if detail.get("reason") != "weight_and_guardian_shortfall":
+                    continue
+                candidates.append(
+                    {
+                        "epoch": int_of(result["epoch"]),
+                        "cpoc_number": cpoc_number,
+                        "participant_address": row["participant_address"],
+                        "model": model,
+                        "stage": int_of(event.get("stage")),
+                        "reason": detail.get("reason"),
+                        "actual_reward_ngonka": actual_reward,
+                        "actual_reward_gonka": ngonka_to_gonka9(actual_reward),
+                        "candidate_loss_ngonka": candidate_loss,
+                        "candidate_loss_gonka": ngonka_to_gonka9(candidate_loss),
+                        "row": row,
+                        "detail": detail,
+                    }
+                )
+    return candidates
+
+
+def classify_broader_candidate(candidate: dict[str, Any]) -> tuple[str, str]:
+    epoch = int_of(candidate["epoch"])
+    model = candidate["model"]
+    if epoch == 267 and model == "Kimi":
+        return "strict_kimi", "eligible"
+    if epoch == 265 and model == "Kimi":
+        return "strict_kimi_extension", "extension_candidate"
+    if epoch == 265:
+        return "broader_cpoc_shortfall", "broad_policy_candidate"
+    return "other_shortfall", "manual_review"
+
+
+def write_broader_victim_csv(candidates: list[dict[str, Any]]) -> None:
+    scope_order = {
+        "strict_kimi": 0,
+        "strict_kimi_extension": 1,
+        "broader_cpoc_shortfall": 2,
+        "other_shortfall": 3,
+    }
+    rows: list[dict[str, Any]] = []
+    for candidate in candidates:
+        scope, classification = classify_broader_candidate(candidate)
+        rows.append(
+            {
+                "scope": scope,
+                "epoch": candidate["epoch"],
+                "participant_address": candidate["participant_address"],
+                "model": candidate["model"],
+                "stage": candidate["stage"],
+                "reason": candidate["reason"],
+                "actual_reward_gonka": candidate["actual_reward_gonka"],
+                "candidate_loss_gonka": candidate["candidate_loss_gonka"],
+                "classification": classification,
+            }
+        )
+    rows.sort(
+        key=lambda r: (
+            scope_order.get(str(r["scope"]), 99),
+            int_of(r["epoch"]),
+            str(r["participant_address"]),
+            str(r["model"]),
+            int_of(r["stage"]),
+        )
+    )
+
+    path = os.path.join(OUT_DIR, "case3_broader_victim_count_recheck.csv")
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = [
+            "scope",
+            "epoch",
+            "participant_address",
+            "model",
+            "stage",
+            "reason",
+            "actual_reward_gonka",
+            "candidate_loss_gonka",
+            "classification",
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    log(f"wrote {path}")
+
+
+def write_epoch265_same_host_csv(candidates: list[dict[str, Any]]) -> None:
+    same_host_candidates = [
+        c
+        for c in candidates
+        if int_of(c["epoch"]) == 265
+        and c["participant_address"] == "gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6"
+        and c["model"] == "Kimi"
+    ]
+    path = os.path.join(OUT_DIR, "case3_epoch265_same_host_recheck.csv")
+    fieldnames = [
+        "epoch",
+        "participant_address",
+        "root_total_weight",
+        "participant_weight",
+        "epoch_reward_gonka",
+        "actual_reward_gonka",
+        "candidate_loss_gonka",
+        "cpoc1",
+        "cpoc2",
+        "cpoc3",
+        "failed_stage",
+        "failed_model",
+        "submitted_count",
+        "valid_weight",
+        "total_weight",
+        "valid_ratio",
+        "invalid_weight",
+        "no_vote_weight",
+        "guardian_valid",
+        "guardian_invalid",
+        "guardian_no_vote",
+        "notes",
+    ]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        for candidate in same_host_candidates:
+            row = candidate["row"]
+            detail = candidate["detail"]
+            total_weight = int_of(detail.get("total_weight"))
+            valid_weight = int_of(detail.get("valid_weight"))
+            valid_ratio = Decimal(0)
+            if total_weight:
+                valid_ratio = Decimal(valid_weight) / Decimal(total_weight)
+            writer.writerow(
+                {
+                    "epoch": candidate["epoch"],
+                    "participant_address": candidate["participant_address"],
+                    "root_total_weight": row["root_total_weight"],
+                    "participant_weight": row["weight"],
+                    "epoch_reward_gonka": ngonka_to_gonka9(int_of(row["epoch_reward_ngonka"])),
+                    "actual_reward_gonka": candidate["actual_reward_gonka"],
+                    "candidate_loss_gonka": candidate["candidate_loss_gonka"],
+                    "cpoc1": row.get("cpoc1", ""),
+                    "cpoc2": row.get("cpoc2", ""),
+                    "cpoc3": row.get("cpoc3", ""),
+                    "failed_stage": candidate["stage"],
+                    "failed_model": candidate["model"],
+                    "submitted_count": detail.get("count", 0),
+                    "valid_weight": valid_weight,
+                    "total_weight": total_weight,
+                    "valid_ratio": f"{valid_ratio:.6f}",
+                    "invalid_weight": detail.get("invalid_weight", 0),
+                    "no_vote_weight": detail.get("no_vote_weight", 0),
+                    "guardian_valid": detail.get("guardian_valid", 0),
+                    "guardian_invalid": detail.get("guardian_invalid", 0),
+                    "guardian_no_vote": detail.get("guardian_no_vote", 0),
+                    "notes": "same host as epoch 267; Kimi cPoC #3 failed by insufficient valid weight and split guardians",
+                }
+            )
+    log(f"wrote {path}")
+
+
+def sum_loss(candidates: list[dict[str, Any]], scope: str) -> int:
+    return sum(
+        int_of(c["candidate_loss_ngonka"])
+        for c in candidates
+        if classify_broader_candidate(c)[0] == scope
+    )
+
+
+def positive_source_candidates(result267: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for candidate in result267.get("kimi_candidates", []):
+        try:
+            gap = Decimal(str(candidate.get("full_weight_gap_gonka") or "0"))
+        except Exception:
+            gap = Decimal(0)
+        if gap <= 0:
+            continue
+        out.append(candidate)
+    return out
+
+
+def write_broader_review_markdown(candidates: list[dict[str, Any]], result267: dict[str, Any]) -> None:
+    strict_total = sum_loss(candidates, "strict_kimi")
+    extension_total = sum_loss(candidates, "strict_kimi_extension")
+    broad_extra_total = sum_loss(candidates, "broader_cpoc_shortfall")
+    kimi_only_total = strict_total + extension_total
+    broader_total = kimi_only_total + broad_extra_total
+
+    source_rows = positive_source_candidates(result267)[:4]
+    source_table = "\n".join(
+        "| `{addr}` | {signal} | {gap} GONKA |".format(
+            addr=row["participant_address"],
+            signal=(
+                "no Kimi cPoC #1 commit, some validation rows"
+                if not row["submitted_kimi_cpoc1"] and int_of(row["kimi_validations_made_cpoc1"]) > 0
+                else "no Kimi cPoC #1 commit"
+                if not row["submitted_kimi_cpoc1"]
+                else "Kimi commit, no Kimi validation rows"
+            ),
+            gap=display_gonka6_text(row["full_weight_gap_gonka"]),
+        )
+        for row in source_rows
+    )
+
+    kimi_extension_candidates = [
+        c for c in candidates if classify_broader_candidate(c)[0] == "strict_kimi_extension"
+    ]
+    kimi_extension = kimi_extension_candidates[0] if kimi_extension_candidates else None
+    kimi_extension_section = ""
+    if kimi_extension:
+        row = kimi_extension["row"]
+        detail = kimi_extension["detail"]
+        valid_weight = int_of(detail.get("valid_weight"))
+        total_weight = int_of(detail.get("total_weight"))
+        valid_ratio = Decimal(0)
+        if total_weight:
+            valid_ratio = Decimal(valid_weight) / Decimal(total_weight)
+        kimi_extension_section = f"""
+## Epoch 265 Kimi Extension Candidate
+
+Epoch 265 has three confirmation PoC events at trigger heights `4095682`,
+`4098879`, and `4102890`.
+
+For the same address affected in epoch 267:
+
+| field | value |
+| --- | --- |
+| participant | `{kimi_extension["participant_address"]}` |
+| participant weight | {int_of(row.get("weight")):,} |
+| root total weight | {int_of(row.get("root_total_weight")):,} |
+| actual reward | {kimi_extension["actual_reward_gonka"]} GONKA |
+| candidate loss | {display_gonka9(kimi_extension["candidate_loss_ngonka"])} GONKA |
+| cPoC #1 | {markdown_cpoc_status(row.get("cpoc1", ""))} |
+| cPoC #2 | {markdown_cpoc_status(row.get("cpoc2", ""))} |
+| cPoC #3 | {markdown_cpoc_status(row.get("cpoc3", ""))} |
+
+At the failing Kimi stage `{kimi_extension["stage"]}`:
+
+| measure | value |
+| --- | ---: |
+| submitted count | {int_of(detail.get("count")):,} |
+| valid weight / total | {valid_weight:,} / {total_weight:,} = {valid_ratio:.6f} |
+| invalid weight | {int_of(detail.get("invalid_weight")):,} |
+| no-vote weight | {int_of(detail.get("no_vote_weight")):,} |
+| guardian valid / invalid / no-vote | {int_of(detail.get("guardian_valid"))} / {int_of(detail.get("guardian_invalid"))} / {int_of(detail.get("guardian_no_vote"))} |
+
+This fails both checks used by the chain rule: validation weight is below the
+greater-than-two-thirds threshold, and guardians are split.
+"""
+
+    qwen_candidates = [
+        c for c in candidates if classify_broader_candidate(c)[0] == "broader_cpoc_shortfall"
+    ]
+    qwen_candidate = qwen_candidates[0] if qwen_candidates else None
+    qwen_section = ""
+    if qwen_candidate:
+        detail = qwen_candidate["detail"]
+        valid_weight = int_of(detail.get("valid_weight"))
+        total_weight = int_of(detail.get("total_weight"))
+        valid_ratio = Decimal(0)
+        if total_weight:
+            valid_ratio = Decimal(valid_weight) / Decimal(total_weight)
+        qwen_section = f"""
+```text
+{qwen_candidate["participant_address"]}
+```
+
+This is Qwen-only:
+
+| epoch | cPoC | model | valid weight / total | guardian valid | guardian invalid | guardian no-vote | amount |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| {qwen_candidate["epoch"]} | #{qwen_candidate["cpoc_number"]} | {qwen_candidate["model"]} | {valid_weight:,} / {total_weight:,} = {valid_ratio:.6f} | {detail.get("guardian_valid", 0)} | {detail.get("guardian_invalid", 0)} | {detail.get("guardian_no_vote", 0)} | {display_gonka9(qwen_candidate["candidate_loss_ngonka"])} GONKA |
+"""
+
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BROADER_REVIEW.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(
+            f"""# Case #3 Broader Victim Count Recheck
+
+Date: 2026-06-05
+
+Reviewed repo: `gonkalabs/GRC-e267-kimi_shortfall` at `c13d859`.
+
+## Short Answer
+
+Under the strict original rule, this is still one direct Kimi-shortfall victim
+address:
+
+```text
+gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6
+```
+
+However, if GRC accepts epoch 265 as the same failure pattern, this is not only
+one loss row:
+
+| scope | victim rows | amount |
+| --- | ---: | ---: |
+| Epoch 267 Kimi shortfall | 1 | {display_gonka9(strict_total)} GONKA |
+| Epoch 265 Kimi shortfall extension | 1 | {display_gonka9(extension_total)} GONKA |
+| **Kimi-only total** | **2 participant-epoch rows, same address** | **{display_gonka9(kimi_only_total)} GONKA** |
+
+If GRC broadens the case from Kimi-only to any cPoC quorum/guardian shortfall,
+epoch 265 adds one more Qwen-only candidate:
+
+| scope | victim rows | amount |
+| --- | ---: | ---: |
+| Kimi-only total above | 2 | {display_gonka9(kimi_only_total)} GONKA |
+| Epoch 265 Qwen-only cPoC shortfall | 1 | {display_gonka9(broad_extra_total)} GONKA |
+| **Broader cPoC-shortfall total** | **3 participant-epoch rows, 2 addresses** | **{display_gonka9(broader_total)} GONKA** |
+
+## Why The Strict Kimi Count Is Still One Address
+
+Epoch 267 has only three zero-reward participants:
+
+| address | cPoC status | why not more victims |
+| --- | --- | --- |
+| `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | Qwen passed by guardian; Kimi failed by shortfall; later Kimi passed | direct Kimi-shortfall victim |
+| `gonka1tmk2tzdneht6smu34pkmqdvu7p34qavvmwtwq2` | no submit in all four cPoCs | no submitted cPoC row to rescue |
+| `gonka1ujnc662v6g69jm6fgxnr79a2m7ehzeut059239` | Kimi passed cPoC #1/#2/#4; no submit cPoC #3 | not a Kimi quorum failure victim |
+
+Across all epoch 267 cPoCs, the only participant with an actual Kimi
+`weight_and_guardian_shortfall` and zero reward is `gonka1j7x6...`.
+
+Epoch 265 has many zero-reward rows, but most are no-submit rows. The same
+`gonka1j7x6...` row is the only Kimi shortfall candidate with submitted work
+and zero reward.
+
+{kimi_extension_section.strip()}
+
+## Additional Broad Candidate
+
+Epoch 265 has one more zero-reward shortfall if the case is not restricted to
+Kimi:
+
+{qwen_section.strip()}
+
+This is not part of a strict Kimi-only case, but it is a real cPoC
+quorum/guardian shortfall candidate.
+
+## Source Candidates Are Not Direct Victims
+
+There are also Kimi non-submit / non-voting source candidates. Some have
+positive full-weight gaps. They help explain why Kimi validation weight was
+short, but they are not direct victims of the "my submitted nonces could not be
+validated" pattern unless GRC explicitly broadens policy to compensate
+source/non-voting participants too.
+
+Examples from epoch 267:
+
+| address | signal | gap |
+| --- | --- | ---: |
+{source_table}
+
+These are different from the direct victim row. Treating them as restitution
+victims would be a separate policy decision.
+
+## Current Framing
+
+```text
+Kimi-only direct victim count:
+1 address, 2 participant-epoch rows if epoch 265 is accepted.
+
+Broader cPoC-shortfall victim count:
+2 addresses, 3 participant-epoch rows if the epoch 265 Qwen-only row is also
+accepted.
+
+Source/non-voting candidates:
+visible and relevant to root cause, but not direct restitution victims under
+the current case rule.
+```
+"""
+        )
+    log(f"wrote {path}")
+
+
+def write_broader_review(args: argparse.Namespace) -> None:
+    original_epoch = int(args.epoch)
+    result267 = audit(argparse.Namespace(epoch=267, workers=args.workers))
+    result265 = audit(argparse.Namespace(epoch=265, workers=args.workers))
+    candidates = iter_zero_reward_shortfalls(result267) + iter_zero_reward_shortfalls(result265)
+    write_broader_victim_csv(candidates)
+    write_epoch265_same_host_csv(candidates)
+    write_broader_review_markdown(candidates, result267)
+
+    # Keep the standard checked-in output files on the requested epoch after
+    # generating the cross-epoch review.
+    audit(argparse.Namespace(epoch=original_epoch, workers=args.workers))
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", type=int, default=EPOCH)
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument(
+        "--broader-review",
+        action="store_true",
+        help="regenerate BROADER_REVIEW.md and cross-epoch recheck CSVs for epochs 267 and 265",
+    )
     args = parser.parse_args()
-    audit(args)
+    if args.broader_review:
+        write_broader_review(args)
+    else:
+        audit(args)
     return 0
 
 

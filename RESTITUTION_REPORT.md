@@ -12,9 +12,30 @@ passed.
 
 | participant | weight | cPoC #1 result | next cPoCs | proposed restitution |
 | --- | ---: | --- | --- | ---: |
-| `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | 19,518 | Qwen `pass_guardian`; Kimi `weight_and_guardian_shortfall` | Kimi `pass_guardian`, Kimi `pass_guardian`, Kimi `pass_guardian` | **10,262.057515 GONKA** |
+| `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` | 19,518 | Qwen `pass_guardian`; Kimi `weight_and_guardian_shortfall` | Kimi `pass_guardian`, Kimi `pass_guardian`, Kimi `pass_guardian` | **10,262.057515369 GONKA** |
 
-Draft restitution for that direct-failure row: **10,262.057515 GONKA**.
+Draft restitution for that direct-failure row: **10,262.057515369 GONKA**.
+
+### Broader 2026-06-05 Recheck
+
+The original epoch 267 finding remains valid under the strict Kimi-only rule:
+one direct victim address and one epoch 267 restitution row.
+
+The broader recheck adds two scope options for GRC:
+
+| scope | victim rows | amount |
+| --- | ---: | ---: |
+| Epoch 267 Kimi shortfall | 1 | 10,262.057515369 GONKA |
+| Epoch 265 Kimi shortfall extension | 1 | 20,896.527179100 GONKA |
+| **Kimi-only total if epoch 265 is accepted** | **2 participant-epoch rows, same address** | **31,158.584694469 GONKA** |
+| Epoch 265 Qwen-only cPoC shortfall, if broader policy is accepted | 1 | 4,154.662338515 GONKA |
+| **Broader cPoC-shortfall total** | **3 participant-epoch rows, 2 addresses** | **35,313.247032984 GONKA** |
+
+The epoch 265 Kimi row is the same address as the epoch 267 victim:
+`gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6`.
+
+The additional broader candidate is Qwen-only:
+`gonka1myu058axjs62mc3e7na9krwvqpfl9z3gtcw9es`.
 
 The audit also found related non-victim signals: one additional Qwen guardian
 no-vote row that still passed by weight, plus Kimi cPoC #1 non-submit /
@@ -49,6 +70,45 @@ For the next three cPoCs, the same participant submitted Kimi and passed:
 
 Actual epoch reward for this participant from
 `epoch_performance_summary/267/{address}` is zero.
+
+## Epoch 265 Extension Recheck
+
+Epoch 265 has the same address failing a Kimi cPoC by validation-weight and
+guardian shortfall, with zero actual reward:
+
+| field | value |
+| --- | --- |
+| participant | `gonka1j7x6dv42xehe9e5au4ku3wvzwtqlegfjhlvzj6` |
+| participant weight | 66,311 |
+| root total weight | 904,177 |
+| actual reward | 0.000000000 GONKA |
+| candidate loss | 20,896.527179100 GONKA |
+| cPoC #1 | Qwen `pass_guardian`; Kimi `pass_weight` |
+| cPoC #2 | Qwen `pass_guardian`; Kimi `pass_guardian` |
+| cPoC #3 | Qwen `pass_guardian`; Kimi `weight_and_guardian_shortfall` |
+
+At the failing Kimi stage `4102890`:
+
+| measure | value |
+| --- | ---: |
+| submitted count | 52,028 |
+| valid weight / total | 256,727 / 904,177 = 0.283934 |
+| invalid weight | 187,906 |
+| no-vote weight | 398,021 |
+| guardian valid / invalid / no-vote | 1 / 1 / 0 |
+
+This fails the chain cPoC rule: validation weight is below the
+greater-than-two-thirds threshold, and the guardian result is split.
+
+There is also one Qwen-only epoch 265 broad-policy candidate:
+
+| participant | model | stage | valid weight / total | guardian valid / invalid / no-vote | candidate loss |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `gonka1myu058axjs62mc3e7na9krwvqpfl9z3gtcw9es` | Qwen | `4102890` | 6,794 / 904,177 = 0.007514 | 0 / 0 / 3 | 4,154.662338515 GONKA |
+
+This Qwen row is not part of the strict Kimi-only case, but it is included for
+GRC policy review because it has the same direct cPoC quorum/guardian shortfall
+shape.
 
 ## Full-Case Eligibility Rule
 
@@ -152,7 +212,7 @@ Result:
 ```text
 19,518 / 541,415 * 284,661,946,392,228
 = 10,262,057,515,369 ngonka
-= 10,262.057515 GONKA
+= 10,262.057515369 GONKA
 ```
 
 ## Files
@@ -165,6 +225,9 @@ Result:
 | `output/case3_affected_no_vote_validators.csv` | no-vote validator detail for affected row |
 | `output/case3_full_case_matrix.csv` | confirmed victim plus every related cPoC #1 guardian-skip / Kimi non-voting signal |
 | `output/case3_kimi_cpoc1_non_submit_candidates.csv` | Kimi cPoC #1 non-submit / non-voting candidate rows |
+| `BROADER_REVIEW.md` | 2026-06-05 scope recheck covering epoch 265 and broader cPoC shortfall candidates |
+| `output/case3_broader_victim_count_recheck.csv` | strict Kimi and broader cPoC candidate rows from the recheck |
+| `output/case3_epoch265_same_host_recheck.csv` | epoch 265 same-address Kimi shortfall evidence row |
 | `output/raw_chain/` | cached raw node1-node4 direct-chain API responses |
 
 ## Caveats

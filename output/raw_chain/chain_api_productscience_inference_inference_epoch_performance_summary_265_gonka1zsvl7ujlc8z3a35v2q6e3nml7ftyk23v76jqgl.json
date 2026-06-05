@@ -1,0 +1,14 @@
+{
+  "epochPerformanceSummary": {
+    "burned_coins": "0",
+    "claimed": false,
+    "earned_coins": "0",
+    "epoch_index": "265",
+    "inference_count": "974",
+    "invalidated_inferences": "0",
+    "missed_requests": "562",
+    "participant_id": "gonka1zsvl7ujlc8z3a35v2q6e3nml7ftyk23v76jqgl",
+    "rewarded_coins": "0",
+    "validated_inferences": "974"
+  }
+}
